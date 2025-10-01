@@ -1,69 +1,61 @@
-Chennai Pollution Dashboard – Student Project Brief
+# 🌍 Chennai Pollution Dashboard
 
-Student: [Nephew’s Name]
-Class: 8
-School: Don Bosco Matriculation Higher Secondary School, Egmore, Chennai
+**Student Project – Class 8**  
+**Student:** Ruwayf Ibrahim  
+**School:** Don Bosco Matriculation Higher Secondary School, Egmore, Chennai  
 
-Problem
+🔗 **Live Demo:** [View Dashboard](https://farhancs91.github.io/chennai-pollution-dashboard/)
 
-Air pollution and noise pollution are two major problems in cities like Chennai. They affect our health, studies, and quality of life.
+---
 
-Air pollution (measured by PM2.5 dust in the air) can cause asthma, breathing trouble, and long-term illness.
+## Problem
+Air pollution and noise pollution are two major problems in cities like Chennai. They affect our health, studies, and quality of life.  
 
-Noise pollution (measured in decibels) can cause stress, sleep problems, and hearing damage.
+- **Air pollution** (measured by PM2.5 dust in the air) can cause asthma, breathing trouble, and long-term illness.  
+- **Noise pollution** (measured in decibels) can cause stress, sleep problems, and hearing damage.  
 
-My Solution
+---
 
-I built a Chennai Pollution Dashboard:
+## My Solution
+I built a **Chennai Pollution Dashboard** that:  
+- Shows **Air vs Noise pollution** on a map of Chennai.  
+- Covers **40+ localities** (T. Nagar, Anna Nagar, Adyar, Velachery, Royapuram, Tambaram, etc.).  
+- Includes a **Top-5 chart** showing the worst affected areas.  
+- Includes a **Compare chart** showing the relationship between air and noise pollution.  
+- Lets you **filter by locality**, works on phone or laptop.  
 
-Shows Air vs Noise pollution on a map of Chennai.
+---
 
-Covers 40+ localities (T. Nagar, Anna Nagar, Adyar, Velachery, Royapuram, Tambaram, etc.).
+## Tools Used
+- **HTML, CSS (Tailwind)** → Layout and styling  
+- **Leaflet.js** → Interactive map  
+- **Chart.js** → Graphs  
+- **Papa Parse** → Load data from CSV file  
+- **GitHub Pages** → Free hosting  
 
-Top-5 chart shows the worst affected areas.
+---
 
-Compare chart shows the relationship between air and noise pollution.
+## Insights
+- **Ennore, Royapuram, Perambur** show high air pollution due to industries and traffic.  
+- **Koyambedu, T. Nagar, Velachery** show high noise levels due to traffic congestion.  
+- Some localities (e.g., **Besant Nagar, Thiruvanmiyur**) have relatively lower levels.  
 
-Can filter by locality, easy to use on phone or laptop.
+---
 
-Tools Used
+## Safety Tips
+- Wear a mask on high-pollution days.  
+- Avoid outdoor play near busy roads.  
+- Prefer quieter routes for walking or cycling.  
+- Plant more trees in neighborhoods.  
 
-HTML, CSS (Tailwind) → Layout and styling
+---
 
-Leaflet.js → Interactive map
+## What I Learned
+- How to collect and organize data in CSV.  
+- How to make maps and charts interactive.  
+- How to host a website for free.  
+- How coding can help people understand real problems.  
 
-Chart.js → Graphs
+---
 
-Papa Parse → Load data from CSV file
-
-GitHub Pages → Free hosting
-
-Insights
-
-Ennore, Royapuram, Perambur show high air pollution due to industries and traffic.
-
-Koyambedu, T. Nagar, Velachery show high noise levels due to traffic congestion.
-
-Some localities (e.g., Besant Nagar, Thiruvanmiyur) have relatively lower levels.
-
-Safety Tips
-
-Wear a mask on high-pollution days.
-
-Avoid outdoor play near busy roads.
-
-Prefer quieter routes for walking or cycling.
-
-Plant more trees in neighborhoods.
-
-What I Learned
-
-How to collect and organize data in CSV.
-
-How to make maps and charts interactive.
-
-How to host a website for free.
-
-How coding can help people understand real problems.
-
-👉 Live demo: https://farhancs91.github.io/chennai-pollution-dashboard/
+✨ This project is part of a **Class 8 Computer Science Competition**.  
