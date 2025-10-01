@@ -22,7 +22,10 @@
 <body class="min-h-screen bg-gray-50 text-gray-800">
   <header class="mx-auto max-w-7xl px-4 py-6">
     <h1 class="text-3xl font-bold">Chennai Air & Noise Pollution Dashboard</h1>
-    <p class="text-sm text-gray-600 mt-1">Compare air quality (PM2.5, PM10, NO₂, O₃) and noise levels across localities. Data is editable via <code>data/localities.csv</code>.</p>
+    <p class="text-sm text-gray-600 mt-1">
+      Compare air quality (PM2.5, PM10, NO₂, O₃) and noise levels across localities.
+      Data is editable via <code>data/localities.csv</code>. If CSV isn’t found, sample data is shown.
+    </p>
   </header>
 
   <main class="mx-auto max-w-7xl px-4 pb-16 space-y-6">
@@ -45,7 +48,8 @@
           <input id="searchInput" placeholder="Type to filter (e.g., Adyar)" class="mt-1 rounded-xl border w-64 p-2" />
         </div>
         <div class="text-sm text-gray-600">
-          <span>Updated: <span id="lastUpdated">--</span></span>
+          <span>Status: <span id="statusText">Loading…</span></span>
+          <span class="ml-3">Updated: <span id="lastUpdated">--</span></span>
         </div>
       </div>
     </section>
@@ -98,8 +102,208 @@
   </main>
 
 <script>
-// same JavaScript logic as before...
-// (for brevity I won’t paste it all here, but I can give you again if needed)
+/* ---------- Inline fallback data ---------- */
+const INLINE_DATA = [
+  { locality:"T. Nagar",   lat:13.0418, lon:80.2340, pm25:58, pm10:92, no2:34, o3:21, noise_day_db:72, noise_night_db:64, updated_at:"2025-10-01" },
+  { locality:"Anna Nagar", lat:13.0860, lon:80.2101, pm25:46, pm10:78, no2:28, o3:25, noise_day_db:68, noise_night_db:60, updated_at:"2025-10-01" },
+  { locality:"Adyar",      lat:13.0067, lon:80.2570, pm25:39, pm10:63, no2:22, o3:27, noise_day_db:66, noise_night_db:58, updated_at:"2025-10-01" },
+  { locality:"Velachery",  lat:12.9792, lon:80.2212, pm25:52, pm10:85, no2:31, o3:20, noise_day_db:73, noise_night_db:66, updated_at:"2025-10-01" },
+  { locality:"Tambaram",   lat:12.9249, lon:80.1275, pm25:44, pm10:72, no2:24, o3:18, noise_day_db:65, noise_night_db:57, updated_at:"2025-10-01" },
+  { locality:"Perambur",   lat:13.1077, lon:80.2377, pm25:60, pm10:95, no2:38, o3:19, noise_day_db:75, noise_night_db:68, updated_at:"2025-10-01" },
+  { locality:"Royapuram",  lat:13.1143, lon:80.2931, pm25:55, pm10:88, no2:36, o3:23, noise_day_db:74, noise_night_db:67, updated_at:"2025-10-01" },
+];
+
+/* ---------- App state ---------- */
+const state = {
+  raw: [],
+  filtered: [],
+  map: null,
+  markers: [],
+  topChart: null,
+  compareChart: null,
+};
+
+/* ---------- Utilities ---------- */
+function metricLabel(metric) {
+  return {
+    pm25: 'PM2.5 (µg/m³)',
+    pm10: 'PM10 (µg/m³)',
+    no2:  'NO₂ (µg/m³)',
+    o3:   'O₃ (µg/m³)',
+    noise_day_db:  'Noise Day (dB)',
+    noise_night_db:'Noise Night (dB)',
+  }[metric] || metric;
+}
+
+function aqColor(value, metric) {
+  const ranges = {
+    pm25: [0,150], pm10: [0,200], no2: [0,80], o3: [0,100],
+    noise_day_db: [40,85], noise_night_db: [35,80],
+  };
+  const [min, max] = ranges[metric] || [0,100];
+  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  const hue = (1 - t) * 120; // green→red
+  return `hsl(${hue}, 80%, 45%)`;
+}
+
+function bubbleRadius(value, metric) {
+  const ranges = {
+    pm25: [0,150], pm10: [0,200], no2: [0,80], o3: [0,100],
+    noise_day_db: [40,85], noise_night_db: [35,80],
+  };
+  const [min, max] = ranges[metric] || [0,100];
+  const t = Math.max(0.2, Math.min(1, (value - min) / (max - min)));
+  return 12 + t * 18;
+}
+
+/* ---------- Map ---------- */
+function initMap() {
+  state.map = L.map('map').setView([13.0827, 80.2707], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(state.map);
+}
+
+function clearMarkers() {
+  state.markers.forEach(m => m.remove());
+  state.markers = [];
+}
+
+function drawMarkers(metric) {
+  clearMarkers();
+  state.filtered.forEach(row => {
+    const value = Number(row[metric]);
+    const color = aqColor(value, metric);
+    const radius = bubbleRadius(value, metric);
+    const marker = L.circleMarker([Number(row.lat), Number(row.lon)], {
+      radius, fillColor: color, fillOpacity: 0.75, color: '#333', weight: 1
+    }).bindPopup(`<b>${row.locality}</b><br/>${metricLabel(metric)}: <b>${value}</b>`);
+    marker.addTo(state.map);
+    state.markers.push(marker);
+  });
+}
+
+/* ---------- Charts ---------- */
+function buildTopChart(metric) {
+  const ctx = document.getElementById('topChart');
+  const sorted = [...state.filtered].sort((a,b)=>Number(b[metric])-Number(a[metric])).slice(0,5);
+  const labels = sorted.map(r=>r.locality);
+  const data = sorted.map(r=>Number(r[metric]));
+  if (state.topChart) state.topChart.destroy();
+  state.topChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: metricLabel(metric), data }] },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true }, tooltip: { enabled: true } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+function buildCompareChart() {
+  const ctx = document.getElementById('compareChart');
+  const labels = state.filtered.map(r=>r.locality);
+  const avgAir = state.filtered.map(r=> (Number(r.pm25)+Number(r.pm10)+Number(r.no2)+Number(r.o3))/4 );
+  const avgNoise = state.filtered.map(r=> (Number(r.noise_day_db)+Number(r.noise_night_db))/2 );
+  if (state.compareChart) state.compareChart.destroy();
+  state.compareChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Avg Air Metric (µg/m³)', data: avgAir },
+        { label: 'Avg Noise (dB)', data: avgNoise },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } },
+      interaction: { mode: 'index', intersect: false },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+/* ---------- Table & Filters ---------- */
+function renderTable() {
+  const tbody = document.querySelector('#dataTable tbody');
+  tbody.innerHTML = '';
+  state.filtered.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2">${r.locality}</td>
+      <td class="p-2">${r.pm25}</td>
+      <td class="p-2">${r.pm10}</td>
+      <td class="p-2">${r.no2}</td>
+      <td class="p-2">${r.o3}</td>
+      <td class="p-2">${r.noise_day_db}</td>
+      <td class="p-2">${r.noise_night_db}</td>
+      <td class="p-2">${r.updated_at}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function applyFilter() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  state.filtered = state.raw.filter(r => (r.locality||'').toLowerCase().includes(q));
+}
+
+function updateLastUpdated() {
+  const dates = state.filtered.map(r => r.updated_at);
+  const last = dates.sort().slice(-1)[0] || '--';
+  document.getElementById('lastUpdated').textContent = last;
+}
+
+/* ---------- Refresh pipeline ---------- */
+function refresh(metric) {
+  applyFilter();
+  drawMarkers(metric);
+  renderTable();
+  buildTopChart(metric);
+  buildCompareChart();
+  updateLastUpdated();
+}
+
+/* ---------- CSV loader with fallback ---------- */
+async function loadData() {
+  document.getElementById('statusText').textContent = 'Loading CSV…';
+  return new Promise((resolve) => {
+    Papa.parse('./data/localities.csv?ts=' + Date.now(), {
+      header: true,
+      download: true,
+      complete: (results) => {
+        const rows = (results.data || []).filter(r => r.locality);
+        if (rows.length) {
+          document.getElementById('statusText').textContent = 'CSV loaded';
+          return resolve(rows);
+        }
+        document.getElementById('statusText').textContent = 'CSV empty → showing sample data';
+        resolve(INLINE_DATA);
+      },
+      error: () => {
+        document.getElementById('statusText').textContent = 'CSV missing → showing sample data';
+        resolve(INLINE_DATA);
+      }
+    });
+  });
+}
+
+/* ---------- Boot ---------- */
+document.addEventListener('DOMContentLoaded', async () => {
+  initMap();
+  state.raw = await loadData();
+  state.filtered = [...state.raw];
+
+  const metricSelect = document.getElementById('metricSelect');
+  const searchInput = document.getElementById('searchInput');
+
+  metricSelect.addEventListener('change', () => refresh(metricSelect.value));
+  searchInput.addEventListener('input', () => refresh(metricSelect.value));
+
+  refresh(metricSelect.value);
+});
 </script>
 </body>
 </html>
