@@ -56,6 +56,3 @@ I built a **Chennai Pollution Dashboard** that:
 - How to host a website for free.  
 - How coding can help people understand real problems.  
 
----
-
-✨ This project is part of a **Class 8 Computer Science Competition**.  
